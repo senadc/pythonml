@@ -8,7 +8,9 @@ class NeuralNetwork():
         return g
 
     def sigmoidGradient(self, z):            
-        g = np.multiply(self.sigmoid(z), (1 - self.sigmoid(z)))
+        return np.multiply(self.sigmoid(z), (1 - self.sigmoid(z)))
+        #return self.sigmoid(z) * (1 - self.sigmoid(z))
+        
 
     def randomInitializeWeights(self, L_in, L_out):
         epsilon_init = 0.12
