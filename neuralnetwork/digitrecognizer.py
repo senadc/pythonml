@@ -1,6 +1,7 @@
 import scipy.io
 import numpy as np
 from neuralnetwork import NeuralNetwork
+from tools import Tools
 
 # Setup the parameters 
 input_layer_size  = 400  # 20x20 Input Images of Digits
@@ -26,13 +27,14 @@ print(np.shape(y))
 
 
 print('Loading Saved Neural Network Parameters ...')
-
+tools = Tools()
 # Load the weights into variables Theta1 and Theta2
 theta = scipy.io.loadmat('a:\\ex4weights.mat')
 theta1 = theta['Theta1']
 theta2 = theta['Theta2']
+#nn_params = tools.unroll(theta1, theta2)
+reg_lambda = 1
 nn = NeuralNetwork()
-print(nn.sigmoidGradient(0))
-matrix = np.matrix([[1, 2, 3],[4, 5, 6]])
-print(nn.sigmoidGradient(matrix))
-print(nn.sigmoid(matrix))
+J = nn.getCost(theta1, theta2, num_labels, X, y, reg_lambda)
+
+
