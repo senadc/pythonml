@@ -20,28 +20,40 @@ class NeuralNetwork():
     
     def getCost(self, theta1, theta2, num_labels, X, y, reg_lambda):
         idmatrix = np.identity(num_labels)
-        y_matrix = idmatrix[y-1,:]        
+        #y_matrix = idmatrix[y-1,:]    
+        yy = y[:,0]    
+        y_matrix = idmatrix[yy-1,:]        
         
         m = np.size(X, 0)         
-        X = np.append(np.ones((m, 1)), X, 1)
+        X = np.append(np.ones((m, 1)), X, axis=1)
         J = 0
         theta1_grad = np.zeros(np.shape(theta1))
         theta2_grad = np.zeros(np.shape(theta2))
 
         # Forward propagation ----------------------------------
         a1 = X
-        z2 = a1 * np.transpose(theta1)
-        g1 = self.sigmoid(z2)
-        a2 = [np.ones(np.size(g1, 0), 1), g1]
-        z3 = a2 * np.transpose(theta2)
+        
+        z2 = a1.dot(theta1.conj().transpose())
+        g1 = self.sigmoid(z2)        
+        a2 = np.append(np.ones((np.size(g1, 0), 1)), g1, axis=1)
+        z3 = a2.dot(theta2.conj().transpose())
         a3 = self.sigmoid(z3)
         h = a3
 
         # Unregularized cost function ----------------------------------
-        vector1 = np.multiply(-y_matrix, math.log(h))
-        vector2 = np.multiply((1 - y_matrix), (math.log(1 - h)))
-        vec = (vector1 - vector2)
-        J_unregularized =  np.multiply((sum(sum(vec))), m)
+        #vector1 = np.multiply(-y_matrix, np.log(h))
+        vector1 = (-y_matrix) * np.log(h)
+        #vector2 = np.multiply((1 - y_matrix), (np.log(1 - h)))
+        vector2 = (1 - y_matrix) * (np.log(1 - h))
+        vec = vector1 - vector2        
+        print('m: ', m)
+                
+        sm = vec.sum()
+        
+        #J_unregularized =  np.divide(sm, m)
+        J_unregularized =  sm / m
+        
+                
         print('J_unregularized: ', J_unregularized)
 
         # Regularized cost function ----------------------------------
@@ -57,13 +69,13 @@ class NeuralNetwork():
 
         # Back propagation
         d3 = a3 - y_matrix
-        d2 = np.multiply((d3 * T2), self.sigmoidGradient(z2))
+        d2 = np.multiply((d3 * t2), self.sigmoidGradient(z2))
 
         Delta1 = np.transpose(d2) * a1
         Delta2 = np.transpose(d3) * a2
 
-        theta1_grad = (1/m) * Delta1;
-        theta2_grad = (1/m) * Delta2;
+        theta1_grad = (1/m) * Delta1
+        theta2_grad = (1/m) * Delta2
 
 
         #T1 = theta1(:,1) = 0;
@@ -80,4 +92,4 @@ class NeuralNetwork():
         t = Tools()
         grad = t.unroll(theta1_grad, theta2_grad)
         # [Theta1_grad(:) ; Theta2_grad(:)];
-        return J
+        return J, grad
