@@ -69,10 +69,11 @@ class NeuralNetwork():
 
         # Back propagation
         d3 = a3 - y_matrix
-        d2 = np.multiply((d3 * t2), self.sigmoidGradient(z2))
+        #d2 = np.multiply((d3 * t2), self.sigmoidGradient(z2))
+        d2 = d3.dot(t2) * self.sigmoidGradient(z2)
 
-        Delta1 = np.transpose(d2) * a1
-        Delta2 = np.transpose(d3) * a2
+        Delta1 = np.transpose(d2).dot(a1)
+        Delta2 = np.transpose(d3).dot(a2)
 
         theta1_grad = (1/m) * Delta1
         theta2_grad = (1/m) * Delta2
