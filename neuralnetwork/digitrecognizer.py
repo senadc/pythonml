@@ -45,7 +45,7 @@ nn_params = nn.unroll(theta1, theta2)
 result = nn.get_nn_params(nn_params, X, y, reg_lambda)
 cost_value = round(result[0],4)
 if cost_value != 0.3838:
-    print("Test with saved parameters failed! Cost value: ", cost_value, "\n")
+    print("ERROR: Test with saved parameters failed! Cost value: ", cost_value, "\n")
 
 
 print("Training neural network. Please wait...")
