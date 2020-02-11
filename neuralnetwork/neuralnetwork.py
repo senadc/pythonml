@@ -14,18 +14,18 @@ class NeuralNetwork(object):
         g = 1.0 / (1.0 + exp(-z))
         return g
 
-    def sigmoidGradient(self, z):       
+    def sigmoid_gradient(self, z):       
         #element-wise multiply     
         return np.multiply(self.sigmoid(z), (1 - self.sigmoid(z)))        
         
-    def randomInitializeWeights(self, L_in, L_out):
+    def random_initialize_weights(self, L_in, L_out):
         epsilon_init = 0.12
         return random.rand(L_out, 1 + L_in) * 2 * epsilon_init - epsilon_init       
         
-    def expandY(self, y, num_labels):
+    def expand_y(self, y, num_labels):
         idmatrix = np.identity(num_labels)        
-        yy = y[:,0]    
-        return idmatrix[yy-1,:]   
+        y_onedim = y[:,0]    
+        return idmatrix[y_onedim-1,:]   
 
     def unroll(self, a, b):
         a = np.vstack(a.reshape(a.size,order='F'))
@@ -42,12 +42,14 @@ class NeuralNetwork(object):
 
 
 
-    def getNNParams(self, nn_params, X, y, reg_lambda):         
+    def get_nn_params(self, nn_params, X, y, reg_lambda):         
 
-        theta1 = np.reshape(nn_params[:self.hidden_layer_size * (self.input_layer_size + 1)], (self.hidden_layer_size, (self.input_layer_size + 1)), order="F")
-        theta2 = np.reshape(nn_params[((self.hidden_layer_size * (self.input_layer_size + 1))):], (self.num_labels, (self.hidden_layer_size + 1)), order="F")
+        theta1 = np.reshape(nn_params[:self.hidden_layer_size * (self.input_layer_size + 1)], 
+                (self.hidden_layer_size, (self.input_layer_size + 1)), order="F")
+        theta2 = np.reshape(nn_params[((self.hidden_layer_size * (self.input_layer_size + 1))):], 
+                (self.num_labels, (self.hidden_layer_size + 1)), order="F")
          
-        y_matrix = self.expandY(y, self.num_labels)        
+        y_matrix = self.expand_y(y, self.num_labels)        
         m = np.size(X, 0)         
         X = np.append(np.ones((m, 1)), X, axis=1)
         J = 0
@@ -56,10 +58,10 @@ class NeuralNetwork(object):
 
         # Forward propagation ----------------------------------
         a1 = X        
-        z2 = a1.dot(theta1.conj().transpose())
+        z2 = a1.dot(theta1.transpose())
         g1 = self.sigmoid(z2)        
         a2 = np.append(np.ones((np.size(g1, 0), 1)), g1, axis=1)
-        z3 = a2.dot(theta2.conj().transpose())
+        z3 = a2.dot(theta2.transpose())
         a3 = self.sigmoid(z3)
         h = a3
 
@@ -82,17 +84,13 @@ class NeuralNetwork(object):
 
         # Back propagation
         d3 = a3 - y_matrix
-        d2 = d3.dot(t2) * self.sigmoidGradient(z2)
+        d2 = d3.dot(t2) * self.sigmoid_gradient(z2)
 
         Delta1 = np.transpose(d2).dot(a1)
         Delta2 = np.transpose(d3).dot(a2)
 
         theta1_grad = (1/m) * Delta1
         theta2_grad = (1/m) * Delta2
-
-
-        #T1 = theta1(:,1) = 0;
-        #T2 = theta2(:,1) = 0;
 
         rp1 = (reg_lambda / m) * theta1
         rp2 = (reg_lambda / m) * theta2
