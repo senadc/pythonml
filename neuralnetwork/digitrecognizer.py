@@ -54,15 +54,13 @@ initial_theta2 = nn.random_initialize_weights(hidden_layer_size, num_labels)
 initial_nn_params = nn.unroll(initial_theta1, initial_theta2)
 weights = scipy.optimize.fmin_cg(cost, fprime=gradient, x0=initial_nn_params, 
         args=(num_labels, X, y, input_layer_size, hidden_layer_size, reg_lambda), 
-        maxiter = 100, disp = False)
+        maxiter = 50, disp = False)
 print("Training finished!\n")
 
 print("Predicting...")
-
-w1 = np.reshape(weights[:hidden_layer_size * (input_layer_size + 1)], 
-    (hidden_layer_size, (input_layer_size + 1)), order="F")
-w2 = np.reshape(weights[((hidden_layer_size * (input_layer_size + 1))):], 
-    (num_labels, (hidden_layer_size + 1)), order="F")
+reshaped_weights = nn.reshape_weights(weights)
+w1 = reshaped_weights[0]
+w2 = reshaped_weights[1]
         
 predictions = nn.predict(w1, w2, X)
 
