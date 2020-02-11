@@ -1,7 +1,16 @@
+import os
 import scipy.io
+import scipy.optimize
 import numpy as np
 from neuralnetwork import NeuralNetwork
-from tools import Tools
+
+def cost(nn_params, num_labels, X, y, input_layer_size, hidden_layer_size, reg_lambda):
+    nn = NeuralNetwork(input_layer_size, hidden_layer_size, num_labels)
+    return nn.getNNParams(nn_params, X, y, reg_lambda)[0]
+def gradient(nn_params, num_labels, X, y, input_layer_size, hidden_layer_size, reg_lambda):
+    nn = NeuralNetwork(input_layer_size, hidden_layer_size, num_labels)
+    return nn.getNNParams(nn_params, X, y, reg_lambda)[1].flatten()
+
 
 # Setup the parameters 
 input_layer_size  = 400  # 20x20 Input Images of Digits
@@ -9,32 +18,52 @@ hidden_layer_size = 25   # 25 hidden units
 num_labels = 10          # 10 labels, from 1 to 10   
                          # (note that we have mapped "0" to label 10)
 
-
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Load Training Data
-print('Loading and Visualizing Data ...\n')
-mat = scipy.io.loadmat('a:\\ex4data1.mat')
+print('Loading training data ...\n')
+mat = scipy.io.loadmat(dir_path + '\\ex4data1.mat')
 X = mat['X']
+y = mat['y']
 m = np.shape(X)[0]
 n = np.shape(X)[1]
 print("Number of training examples: ", m)
 print("Number of features: ", n)
 
-y = mat['y']
-print(np.shape(y))
-#for x in range(4500, 5000):
-  #print(y[x])
 
 
+
+nn = NeuralNetwork(input_layer_size, hidden_layer_size, num_labels)
+reg_lambda = 1
+
+#testing...
 print('Loading Saved Neural Network Parameters ...')
-tools = Tools()
 # Load the weights into variables Theta1 and Theta2
-theta = scipy.io.loadmat('a:\\ex4weights.mat')
+theta = scipy.io.loadmat(dir_path + '\\ex4weights.mat')
 theta1 = theta['Theta1']
 theta2 = theta['Theta2']
-#nn_params = tools.unroll(theta1, theta2)
-reg_lambda = 1
-nn = NeuralNetwork()
-J = nn.getCost(theta1, theta2, num_labels, X, y, reg_lambda)
+nn_params = nn.unroll(theta1, theta2)
+result = nn.getNNParams(nn_params, X, y, reg_lambda)
+cost_value = round(result[0],4)
+if cost_value != 0.3838:
+    print("Test with saved parameters failed! Cost: ", cost_value)
+
+
+print("Training neural network...")
+initial_theta1 = nn.randomInitializeWeights(input_layer_size, hidden_layer_size)
+initial_theta2 = nn.randomInitializeWeights(hidden_layer_size, num_labels)
+initial_nn_params = nn.unroll(initial_theta1, initial_theta2)
+weights = scipy.optimize.fmin_cg(cost, fprime=gradient, x0=initial_nn_params, args=(num_labels, X, y, input_layer_size, hidden_layer_size, reg_lambda), maxiter=100)
+print("Training finished!")
+
+w1 = np.reshape(weights[:hidden_layer_size * (input_layer_size + 1)], (hidden_layer_size, (input_layer_size + 1)), order="F")
+w2 = np.reshape(weights[((hidden_layer_size * (input_layer_size + 1))):], (num_labels, (hidden_layer_size + 1)), order="F")
+        
+predictions = nn.predict(w1, w2, X)
+
+accuracy = np.mean(predictions == (y[:,0])) * 100
+
+print("Neural network accuracy: ", accuracy, "%")
+
 
 

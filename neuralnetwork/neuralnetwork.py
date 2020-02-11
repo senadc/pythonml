@@ -1,10 +1,14 @@
 from numpy import exp, array, random, dot
-from tools import Tools
 import numpy as np
 import math
+import scipy
 
-class NeuralNetwork():
+class NeuralNetwork(object):
 
+    def __init__(self, input_layer_size, hidden_layer_size, num_labels):
+        self.input_layer_size = input_layer_size
+        self.hidden_layer_size = hidden_layer_size
+        self.num_labels = num_labels
 
     def sigmoid(self, z):
         g = 1.0 / (1.0 + exp(-z))
@@ -17,13 +21,33 @@ class NeuralNetwork():
     def randomInitializeWeights(self, L_in, L_out):
         epsilon_init = 0.12
         return random.rand(L_out, 1 + L_in) * 2 * epsilon_init - epsilon_init       
-    
-    def getCost(self, theta1, theta2, num_labels, X, y, reg_lambda):
-        idmatrix = np.identity(num_labels)
-        #y_matrix = idmatrix[y-1,:]    
-        yy = y[:,0]    
-        y_matrix = idmatrix[yy-1,:]        
         
+    def expandY(self, y, num_labels):
+        idmatrix = np.identity(num_labels)        
+        yy = y[:,0]    
+        return idmatrix[yy-1,:]   
+
+    def unroll(self, a, b):
+        a = np.vstack(a.reshape(a.size,order='F'))
+        b = np.vstack(b.reshape(b.size,order='F'))
+        return np.concatenate((a, b), axis=0)
+
+    def predict(self, theta1, theta2, X):
+        m = np.size(X, 0)
+        Xtmp = np.append(np.ones((m, 1)), X, axis=1)
+        h1 = self.sigmoid(Xtmp.dot(theta1.transpose()))
+        h1tmp = np.append(np.ones((m, 1)), h1, axis=1)
+        h2 = self.sigmoid(h1tmp.dot(theta2.transpose()))
+        return np.argmax(h2, 1) + 1
+
+
+
+    def getNNParams(self, nn_params, X, y, reg_lambda):         
+
+        theta1 = np.reshape(nn_params[:self.hidden_layer_size * (self.input_layer_size + 1)], (self.hidden_layer_size, (self.input_layer_size + 1)), order="F")
+        theta2 = np.reshape(nn_params[((self.hidden_layer_size * (self.input_layer_size + 1))):], (self.num_labels, (self.hidden_layer_size + 1)), order="F")
+         
+        y_matrix = self.expandY(y, self.num_labels)        
         m = np.size(X, 0)         
         X = np.append(np.ones((m, 1)), X, axis=1)
         J = 0
@@ -31,8 +55,7 @@ class NeuralNetwork():
         theta2_grad = np.zeros(np.shape(theta2))
 
         # Forward propagation ----------------------------------
-        a1 = X
-        
+        a1 = X        
         z2 = a1.dot(theta1.conj().transpose())
         g1 = self.sigmoid(z2)        
         a2 = np.append(np.ones((np.size(g1, 0), 1)), g1, axis=1)
@@ -40,36 +63,25 @@ class NeuralNetwork():
         a3 = self.sigmoid(z3)
         h = a3
 
-        # Unregularized cost function ----------------------------------
-        #vector1 = np.multiply(-y_matrix, np.log(h))
-        vector1 = (-y_matrix) * np.log(h)
-        #vector2 = np.multiply((1 - y_matrix), (np.log(1 - h)))
+        # Unregularized cost function ----------------------------------        
+        vector1 = (-y_matrix) * np.log(h)        
         vector2 = (1 - y_matrix) * (np.log(1 - h))
-        vec = vector1 - vector2        
-        print('m: ', m)
-                
-        sm = vec.sum()
-        
-        #J_unregularized =  np.divide(sm, m)
+        vec = vector1 - vector2                                
+        sm = vec.sum()                
         J_unregularized =  sm / m
-        
-                
-        print('J_unregularized: ', J_unregularized)
-
+                       
         # Regularized cost function ----------------------------------
-
         # Remove first columns of theta1/theta2        
         t1 = np.delete(theta1, 0, 1)  
         t2 = np.delete(theta2, 0, 1)  
         regparam = (reg_lambda / (2 * m)) * (sum(sum(np.multiply(t1,t1))) + sum(sum(np.multiply(t2,t2))))
-        print('regparam: ', regparam)
+
         # Add regularization param
         J = J_unregularized + regparam
-        print('J: ', J)
+
 
         # Back propagation
         d3 = a3 - y_matrix
-        #d2 = np.multiply((d3 * t2), self.sigmoidGradient(z2))
         d2 = d3.dot(t2) * self.sigmoidGradient(z2)
 
         Delta1 = np.transpose(d2).dot(a1)
@@ -90,7 +102,5 @@ class NeuralNetwork():
 
 
         # Unroll gradients
-        t = Tools()
-        grad = t.unroll(theta1_grad, theta2_grad)
-        # [Theta1_grad(:) ; Theta2_grad(:)];
+        grad = self.unroll(theta1_grad, theta2_grad)
         return J, grad
