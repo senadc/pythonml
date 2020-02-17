@@ -3,7 +3,7 @@ import numpy as np
 import math
 import scipy
 
-class NeuralNetwork(object):
+class AnomalyDetector(object):
 
     def mean(self, X):
         m = np.shape(X)[0]
